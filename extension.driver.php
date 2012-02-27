@@ -9,8 +9,8 @@
 				'release-date' => '2011-12-02',
 				'author' => array(
 					'name' => 'Symphony Team',
-					'website' => 'http://www.symphony21.com',
-					'email' => 'team@symphony21.com'
+					'website' => 'http://www.symphonycms.com',
+					'email' => 'team@symphonycms.com'
 				)
 			);
 		}
