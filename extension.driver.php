@@ -27,7 +27,7 @@
 			  `page_types` varchar(255) default NULL,
 			  PRIMARY KEY  (`id`),
 			  UNIQUE KEY `field_id` (`field_id`)
-			) ENGINE=MyISAM");
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
 		}
 
 		public function update($previousVersion) {
