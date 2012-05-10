@@ -2,6 +2,8 @@
 
 	if(!defined('__IN_SYMPHONY__')) die('<h2>Symphony Error</h2><p>You cannot directly access this file</p>');
 
+	require_once(TOOLKIT . '/class.pagemanager.php');
+
 	Class fieldPages extends Field{
 
 		function __construct(){
@@ -90,19 +92,7 @@
 
 			$result = array();
 			foreach($pages as $p){
-
-				$title = $p['title'];
-
-				if($p['path'] != NULL && $include_parent_titles){
-					$bits = preg_split('/\//', $p['path'], -1, PREG_SPLIT_NO_EMPTY);
-					$bits = array_reverse($bits);
-
-					foreach($bits as $h){
-						$parent = Symphony::Database()->fetchVar('title', 0, "SELECT `title` FROM `tbl_pages` WHERE `handle` = '$h' LIMIT 1");
-						$title = $parent . ' / ' . $title;
-					}
-				}
-
+				$title = PageManager::resolvePageTitle($p['id']);
 				$result[$p['id']] = $title;
 			}
 
@@ -111,7 +101,7 @@
 
 		function toggleFieldData($data, $newState){
 
-			$page = Symphony::Database()->fetchRow(0, "SELECT `title`, `id`, `handle` FROM `tbl_pages` WHERE `id` = '$newState' LIMIT 1");
+			$page = PageManager::fetchPageByID($newState, array('handle', 'title', 'id'));
 
 			$data['handle'] = $page['handle'];
 			$data['title'] = $page['title'];
@@ -176,35 +166,20 @@
 			// stop when no page is set
 			if(!isset($data['page_id'])) return;
 
-			$pages = Symphony::Database()->fetch("
-				SELECT
-					p.*
-				FROM
-					`tbl_pages` AS p
-				WHERE p.`id` = {$data['page_id']}
-				ORDER BY
-					p.sortorder ASC
-			");
+			$pages = PageManager::fetchPageByID($data['page_id'], array('id'));
+			// Make sure that $pages is an array of pages.
+			// PageManager::fetchPageByID() returns an array of page properties for a single page.
+			if (!is_array(current($pages))) {
+				$pages = array($pages);
+			}
 
 			$result = array();
 			foreach($pages as $p){
-
-				$title = $p['title'];
-
-				if($p['path'] != NULL){
-					$bits = preg_split('/\//', $p['path'], -1, PREG_SPLIT_NO_EMPTY);
-					$bits = array_reverse($bits);
-
-					foreach($bits as $h){
-						$parent = Symphony::Database()->fetchVar('title', 0, "SELECT `title` FROM `tbl_pages` WHERE `handle` = '$h' LIMIT 1");
-						$title = $parent . ' / ' . $title;
-					}
-				}
-
+				$title = PageManager::resolvePageTitle($p['id']);
 				$result[$p['id']] = $title;
 			}
 
-			$value = $title;
+			$value = implode(', ', $result);
 
 			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link);
 		}
@@ -220,7 +195,7 @@
 			$result = array('title' => array(), 'handle' => array(), 'page_id' => array());
 			foreach($data as $page_id){
 
-				$page = Symphony::Database()->fetchRow(0, "SELECT `title`, `handle` FROM `tbl_pages` WHERE `id` = '$page_id' LIMIT 1");
+				$page = PageManager::fetchPageByID($page_id, array('handle', 'title'));
 
 				$result['handle'][] = $page['handle'];
 				$result['title'][] = $page['title'];
@@ -294,18 +269,9 @@
 			$label = new XMLElement('label', __('Filter pages by type'));
 			$label->appendChild(Widget::Input('fields['.$this->get('sortorder').'][page_types]', $this->get('page_types')));
 			$wrapper->appendChild($label);
-			$types = Symphony::Database()->fetchCol('type', "
-				SELECT
-					p.type
-				FROM
-					`tbl_pages_types` AS p
-				GROUP BY
-					p.type
-				ORDER BY
-					p.type ASC
-			");
 			$tags = new XMLElement('ul');
 			$tags->setAttribute('class', 'tags');
+			$types = PageManager::fetchPageTypes();
 			if(is_array($types) && !empty($types)) {
 				foreach($types as $type) $tags->appendChild(new XMLElement('li', $type));
 			}
