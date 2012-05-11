@@ -259,15 +259,19 @@
 			}
 			$wrapper->appendChild($tags);
 
-			## Allow selection of multiple items
+			// Allow selection of multiple items
 			$label = Widget::Label();
+			$label->setAttribute('class', 'column');
 			$input = Widget::Input('fields['.$this->get('sortorder').'][allow_multiple_selection]', 'yes', 'checkbox');
 			if($this->get('allow_multiple_selection') == 'yes') $input->setAttribute('checked', 'checked');
-			$label->setValue($input->generate() . ' Allow selection of multiple pages');
-			$wrapper->appendChild($label);
+			$label->setValue($input->generate() . ' ' . __('Allow selection of multiple options'));
 
-			$this->appendShowColumnCheckbox($wrapper);
-			$this->appendRequiredCheckbox($wrapper);
+			$div = new XMLElement('div', NULL, array('class' => 'two columns'));
+			$div->appendChild($label);
+
+			$this->appendRequiredCheckbox($div);
+			$this->appendShowColumnCheckbox($div);
+			$wrapper->appendChild($div);
 		}
 
 		function groupRecords($records){
