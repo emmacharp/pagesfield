@@ -60,39 +60,23 @@
 
 		function getToggleStates($include_parent_titles=true){
 
-			$types = $this->get('page_types');
-			$types = preg_split('/\s*,\s*/', $types, -1, PREG_SPLIT_NO_EMPTY);
-			$types = @array_map('trim', $types);
-			if (is_array($types) && !empty($types)) {
-				$where = "";
-				for ($i=0; $i < sizeof($types); $i++) {
-					if ($i==0) {
-						$where .= "t.type = '{$types[$i]}'";
-					} else {
-						$where .= " OR t.type = '{$types[$i]}'";
-					}
-				}
-				$where = "AND ({$where})";
-			} else {
-				$where = NULL;
-			}
+			$negate = self::isFilterNegation($this->get('page_types'));
+			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
+			$andOperation = self::isAndOperation($types);
 
-			$pages = Symphony::Database()->fetch("
-				SELECT
-					p.*
-				FROM
-					`tbl_pages` AS p
-				LEFT JOIN
-					`tbl_pages_types` as t ON p.id = t.page_id
-				WHERE 1
-				{$where}
-				ORDER BY
-					p.sortorder ASC
-			");
+			$types = explode(($andOperation ? '+' : ','), $types);
+			$types = array_map('trim', $types);
+
+			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
+			// Make sure that $pages is an array of pages.
+			// PageManager::fetchPageByID() returns an array of page properties for a single page.
+			if (!is_array(current($pages))) {
+				$pages = array($pages);
+			}
 
 			$result = array();
 			foreach($pages as $p){
-				$title = PageManager::resolvePageTitle($p['id']);
+				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
 				$result[$p['id']] = $title;
 			}
 
@@ -129,8 +113,6 @@
 			foreach($states as $id => $title){
 				$options[] = array($id, in_array($id, $data['page_id']), General::sanitize($title));
 			}
-
-			usort($options, array('fieldPages','__sortTitlesAscending'));
 
 			$fieldname = 'fields'.$fieldnamePrefix.'['.$this->get('element_name').']'.$fieldnamePostfix;
 			if($this->get('allow_multiple_selection') == 'yes') $fieldname .= '[]';
@@ -350,6 +332,102 @@
 
 			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `$sort_field` ON (`e`.`id` = `$sort_field`.`entry_id`) ";
 			$sort .= 'ORDER BY ' . (strtolower($order) == 'random' ? 'RAND()' : "`$sort_field`.`handle` $order");
+		}
+
+		/**
+		 * Returns Pages that match the given `$types`. If no `$types` is provided
+		 * the function returns the result of `PageManager::fetch`.
+		 *
+		 * @param array $types
+		 *  An array of some of the available Page Types.
+		 * @param boolean $negate (optional)
+		 *  If true, the logic gets inversed to return Pages that don't match the given `$types`.
+		 * @return array|null
+		 *  An associative array of Page information with the key being the column
+		 *  name from `tbl_pages` and the value being the data. If multiple Pages
+		 *  are found, an array of Pages will be returned. If no Pages are found
+		 *  null is returned.
+		 */
+		public static function fetchPageByTypes(array $types = array(), $andOperation = false, $negate = false) {
+			if(empty($types)) return PageManager::fetch();
+
+			$types = array_map(array('MySQL', 'cleanValue'), $types);
+
+			// Build SQL parts depending on query parameters. There are four possibilities.
+			// 1. Without negation and with OR filter
+			if (!$andOperation && !$negate) {
+				$join = "LEFT JOIN `tbl_pages_types` AS `pt` ON (p.id = pt.page_id)";
+				$where = sprintf("
+						AND `pt`.type IN ('%s')
+					",
+					implode("', '", $types)
+				);
+			}
+			// 2. Without negation and with AND filter
+			elseif ($andOperation && !$negate) {
+				$join = "";
+				$where = "";
+				foreach($types as $index => $type) {
+					$join .= " LEFT JOIN `tbl_pages_types` AS `pt_{$index}` ON (p.id = pt_{$index}.page_id)";
+					$where .= " AND pt_{$index}.type = '" . $type . "'";
+				}
+			}
+			// 3. With negation and with OR filter
+			elseif (!$andOperation && $negate) {
+				$join = sprintf("
+						LEFT JOIN `tbl_pages_types` AS `pt` ON (p.id = pt.page_id AND pt.type IN ('%s'))
+					",
+					implode("', '", $types)
+				);
+				$where = "AND `pt`.type IS NULL";
+			}
+			// 4. With negation and with AND filter
+			elseif ($andOperation && $negate) {
+				$join = "";
+				$where = "AND (";
+				foreach($types as $index => $type) {
+					$join .= sprintf("
+							LEFT JOIN `tbl_pages_types` AS `pt_%s` ON (p.id = pt_%s.page_id AND pt_%s.type IN ('%s'))
+						",
+						$index, $index, $index,
+						$type
+					);
+					$where .= ($index === 0 ? "" : " OR ") . "pt_{$index}.type IS NULL";
+				}
+				$where .= ")";
+			}
+
+			$pages = Symphony::Database()->fetch(sprintf("
+					SELECT
+						`p`.*
+					FROM
+						`tbl_pages` AS `p`
+					%s
+					WHERE 1
+						%s
+				",
+				$join,
+				$where
+			));
+
+			return count($pages) == 1 ? array_pop($pages) : $pages;
+		}
+
+		/**
+		 * Test whether the input string has a negation filter modifier, by searching
+		 * for the prefix of `not:` in the given `$string`.
+		 *
+		 * @param string $string
+		 *  The string to test.
+		 * @return boolean
+		 *  True if the string is prefixed with `not:`, false otherwise.
+		 */
+		public static function isFilterNegation($string){
+			return (preg_match('/^not:/i', $string)) ? true : false;
+		}
+
+		public static function isAndOperation($string){
+			return (strpos($string, '+') === false) ? false : true;
 		}
 
 	}
