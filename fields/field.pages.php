@@ -58,6 +58,10 @@
 			$wrapper->appendChild($list);
 		}
 
+		function getParameterPoolValue(array $data, $entry_id=NULL){
+			return $data['page_id'];
+		}
+
 		function getToggleStates($include_parent_titles=true){
 
 			$negate = self::isFilterNegation($this->get('page_types'));
