@@ -70,6 +70,7 @@
 
 			$types = explode(($andOperation ? '+' : ','), $types);
 			$types = array_map('trim', $types);
+			$types = array_filter($types);
 
 			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
 			// Make sure that $pages is an array of pages.
@@ -357,7 +358,8 @@
 		 *  null is returned.
 		 */
 		public static function fetchPageByTypes(array $types = array(), $andOperation = false, $negate = false) {
-			if(empty($types)) return PageManager::fetch();
+			// Don't filter when not types are set
+			if(empty($types)) return PageManager::fetch(false);
 
 			$types = array_map(array('MySQL', 'cleanValue'), $types);
 
