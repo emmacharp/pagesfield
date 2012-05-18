@@ -1,9 +1,9 @@
 # Page Select Box Field
 
-- Version: 1.4.1
+- Version: 1.5
 - Author: Symphony Team (team@symphony21.com)
-- Build Date: 2nd December 2010
-- Requirements: Symphony 2.0.6+
+- Build Date: 2012-05-11
+- Requirements: Symphony 2.3
 
 
 ## Installation

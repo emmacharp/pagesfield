@@ -2,19 +2,6 @@
 
 	Class extension_pagesfield extends Extension{
 
-		public function about(){
-			return array(
-				'name' => 'Field: Page Select Box',
-				'version' => '1.4.1',
-				'release-date' => '2011-12-02',
-				'author' => array(
-					'name' => 'Symphony Team',
-					'website' => 'http://www.symphonycms.com',
-					'email' => 'team@symphonycms.com'
-				)
-			);
-		}
-
 		public function uninstall(){
 			Symphony::Database()->query("DROP TABLE `tbl_fields_pages`");
 		}
@@ -27,7 +14,7 @@
 			  `page_types` varchar(255) default NULL,
 			  PRIMARY KEY  (`id`),
 			  UNIQUE KEY `field_id` (`field_id`)
-			) ENGINE=MyISAM");
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
 		}
 
 		public function update($previousVersion) {
