@@ -2,9 +2,8 @@
 
 - Version: 1.5
 - Author: Symphony Team (team@symphony21.com)
-- Build Date: 2012-05-11
+- Build Date: 5th July, 2012
 - Requirements: Symphony 2.3
-
 
 ## Installation
 

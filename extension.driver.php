@@ -20,8 +20,7 @@
 		public function update($previousVersion) {
 			if(version_compare($previousVersion, '1.3', '<')){
 				$updated = Symphony::Database()->query(
-					"ALTER TABLE `tbl_fields_pages`
-						ADD `page_types` varchar(255) default NULL"
+					"ALTER TABLE `tbl_fields_pages` ADD `page_types` varchar(255) default NULL"
 				);
 				if(!$updated) return false;
 			}
