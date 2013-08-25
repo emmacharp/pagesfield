@@ -323,7 +323,14 @@
 			if(!is_array($data['title'])) $data['title'] = array($data['title']);
 
 			for($ii = 0; $ii < count($data['handle']); $ii++){
-				$list->appendChild(new XMLElement('page', General::sanitize($data['title'][$ii]), array('handle' => $data['handle'][$ii], 'id' => $data['page_id'][$ii])));
+				$page = PageManager::fetchPageByID($data['page_id'][$ii], array('id', 'parent'));
+				$attributes = array('handle' => $data['handle'][$ii], 'id' => $data['page_id'][$ii]);
+
+				if (!is_null($page['parent'])) {
+					$attributes['parent-id'] = $page['parent'];
+				}
+
+				$list->appendChild(new XMLElement('page', General::sanitize($data['title'][$ii]), $attributes));
 			}
 
 			$wrapper->appendChild($list);
@@ -331,24 +338,19 @@
 
 		public function prepareTableValue($data, XMLElement $link=NULL, $entry_id = null){
 			// stop when no page is set
-			if(!isset($data['page_id'])) return;
-
-			$pages = PageManager::fetchPageByID($data['page_id'], array('id'));
-			// Make sure that $pages is an array of pages.
-			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
-				$pages = array($pages);
+			if(!isset($data['page_id'])) {
+				return parent::prepareTableValue(null);
 			}
 
 			$result = array();
-			foreach($pages as $p){
-				$title = PageManager::resolvePageTitle($p['id']);
-				$result[$p['id']] = $title;
+			foreach ($data['page_id'] as $key => $page) {
+				$link = new XMLElement('a', $data['title'][$key], array(
+					'href' => SYMPHONY_URL . '/blueprints/pages/edit/' . $page . '/'
+				));
+				$result[$key] = $link->generate();
 			}
 
-			$value = implode(', ', $result);
-
-			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link, $entry_id);
+			return implode(', ', $result);
 		}
 
 		public function getParameterPoolValue($data, $entry_id = null) {
@@ -403,7 +405,8 @@
 
 		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-			$sort .= 'ORDER BY ' . (strtolower($order) == 'random' ? 'RAND()' : "`ed`.`handle` $order");
+			$joins .= "INNER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `$sort_field`.`page_id`) ";
+			$sort  .= "ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
 		}
 
 	/*-------------------------------------------------------------------------

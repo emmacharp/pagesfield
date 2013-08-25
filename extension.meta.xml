@@ -13,6 +13,12 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.6" date="2013-08-24" min="2.3">
+			- Added request for sorting to be the same as the sort order under the Pages admin area.
+			- Added parent page ID to xml output, only if the page has a parent.
+			- Added associations, visible under the Page edit screen.
+			- Page titles under a section index are now linkable.
+		</release>
 		<release version="1.5" date="2012-06-05" min="2.3">
 			- Update for Symphony 2.3
 		</release>
