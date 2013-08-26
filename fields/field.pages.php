@@ -173,13 +173,11 @@
 			}
 
 			$pages = Symphony::Database()->fetch(sprintf("
-					SELECT
-						`p`.*
-					FROM
-						`tbl_pages` AS `p`
+					SELECT `p`.*
+					FROM `tbl_pages` AS `p`
 					%s
-					WHERE 1
-						%s
+					WHERE 1 %s
+					ORDER BY `p`.`sortorder` ASC
 				",
 				$join,
 				$where
