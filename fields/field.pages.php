@@ -341,6 +341,8 @@
 			if(!isset($data['page_id'])) {
 				return parent::prepareTableValue(null);
 			}
+			$data['page_id'] = (!is_array($data['page_id']) ? array($data['page_id']) : $data['page_id']);
+			$data['title'] = (!is_array($data['title']) ? array($data['title']) : $data['title']);
 
 			$result = array();
 			foreach ($data['page_id'] as $key => $page) {
