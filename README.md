@@ -1,6 +1,6 @@
 # Page Select Box Field
 
-- Version: 1.6
+- Version: 1.6.1
 - Author: Symphony Team (team@symphony21.com)
 - Build Date: 5th July, 2012
 - Requirements: Symphony 2.3

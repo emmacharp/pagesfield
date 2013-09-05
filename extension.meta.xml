@@ -13,6 +13,9 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.6.1" date="2013-08-05" min="2.3">
+			- Reverted pages linking from entry index to pages section.
+		</release>
 		<release version="1.6" date="2013-08-24" min="2.3">
 			- Added request for sorting to be the same as the sort order under the Pages admin area.
 			- Added parent page ID to xml output, only if the page has a parent.

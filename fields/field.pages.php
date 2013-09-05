@@ -336,27 +336,29 @@
 
 		public function prepareTableValue($data, XMLElement $link=NULL, $entry_id = null){
 			// stop when no page is set
-			if(!isset($data['page_id'])) {
-				return parent::prepareTableValue(null);
+			if(!isset($data['page_id'])) return;
+
+			$pages = PageManager::fetchPageByID($data['page_id'], array('id'));
+			// Make sure that $pages is an array of pages.
+			// PageManager::fetchPageByID() returns an array of page properties for a single page.
+			if (!is_array(current($pages))) {
+				$pages = array($pages);
 			}
-			$data['page_id'] = (!is_array($data['page_id']) ? array($data['page_id']) : $data['page_id']);
-			$data['title'] = (!is_array($data['title']) ? array($data['title']) : $data['title']);
 
 			$result = array();
-			foreach ($data['page_id'] as $key => $page) {
-				$link = new XMLElement('a', $data['title'][$key], array(
-					'href' => SYMPHONY_URL . '/blueprints/pages/edit/' . $page . '/'
-				));
-				$result[$key] = $link->generate();
+			foreach($pages as $p){
+				$title = PageManager::resolvePageTitle($p['id']);
+				$result[$p['id']] = $title;
 			}
 
-			return implode(', ', $result);
+			$value = implode(', ', $result);
+
+			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link, $entry_id);
 		}
 
 		public function getParameterPoolValue($data, $entry_id = null) {
 			return $data['page_id'];
 		}
-
 	/*-------------------------------------------------------------------------
 		Filtering:
 	-------------------------------------------------------------------------*/
