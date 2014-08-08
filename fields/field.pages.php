@@ -407,7 +407,7 @@
 
 		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-			$joins .= "INNER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `$sort_field`.`page_id`) ";
+			$joins .= "INNER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `ed`.`page_id`) ";
 			$sort  .= "ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
 		}
 
