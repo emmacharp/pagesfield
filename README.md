@@ -1,8 +1,8 @@
 # Page Select Box Field
 
-- Version: 1.6.1
+- Version: 1.6.2
 - Author: Symphony Team (team@symphony21.com)
-- Build Date: 5th July, 2012
+- Build Date: 8th August, 2014
 - Requirements: Symphony 2.3
 
 ## Installation
@@ -15,4 +15,4 @@
 
 ## Sorting
 
-The field sorts the pages according to the sortorder determined in 'Blueprints » Pages'. If the sorting isn't correct, it's probably because of the sortorder. To set the sortorder of your pages, edit your config.php-file, set symphony/pages_table_nest_children to yes, and sort the pages manually in your pages screen. When done, you can set symphony/pages_table_nest_children back to no (or keep it on yes, if that is your prefered way of working).
+The field sorts the pages according to the sortorder determined in 'Blueprints » Pages'. If the sorting isn't correct, it's probably because of the sortorder. To set the sortorder of your pages, edit your `config.php`, set `symphony/pages_table_nest_children` to `yes`, and sort the pages manually in your pages screen. When done, you can set `symphony/pages_table_nest_children` back to no (or keep it on yes, if that is your prefered way of working).

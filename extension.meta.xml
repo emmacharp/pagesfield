@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension id="pagesfield" status="released" xmlns="http://symphony-cms.com/schemas/extension/1.0">
+<extension id="pagesfield" status="released" xmlns="http://getsymphony.com/schemas/extension/1.0">
 	<name>Pages Field</name>
 	<description>Easily related entries to pages</description>
 	<repo type="github">https://github.com/symphonists/pagesfield</repo>
-	<url type="discuss">http://symphony-cms.com/discuss/thread/267/</url>
+	<url type="discuss">http://getsymphony.com/discuss/thread/267/</url>
 	<types>
 		<type>Field Types</type>
 	</types>
@@ -13,6 +13,9 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.6.2" date="2014-08-08" min="2.3">
+			- Fix for page sorting (#15)
+		</release>
 		<release version="1.6.1" date="2013-08-05" min="2.3">
 			- Reverted pages linking from entry index to pages section.
 		</release>
