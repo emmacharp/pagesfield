@@ -335,7 +335,7 @@
 			$wrapper->appendChild($list);
 		}
 
-		public function prepareTableValue($data, XMLElement $link=NULL, $entry_id = null){
+		public function prepareTextValue($data, $entry_id = null){
 			// stop when no page is set
 			if(!isset($data['page_id'])) return;
 
@@ -354,7 +354,7 @@
 
 			$value = implode(', ', $result);
 
-			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link, $entry_id);
+			return $value;
 		}
 
 		public function getParameterPoolValue($data, $entry_id = null) {
