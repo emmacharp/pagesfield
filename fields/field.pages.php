@@ -14,6 +14,7 @@
 			// Set default
 			$this->set('required', 'yes');
 			$this->set('show_column', 'no');
+			$this->set('unique_value', 'no');
 		}
 
 	/*-------------------------------------------------------------------------
@@ -80,6 +81,10 @@
 			return true;
 		}
 
+		public function valueMustBeUnique(){
+			return $this->get('unique_value') == 'yes';
+		}
+
 	/*-------------------------------------------------------------------------
 		Setup:
 	-------------------------------------------------------------------------*/
@@ -106,6 +111,32 @@
 
 		public function __sortTitlesAscending($t1, $t2){
 			return strcmp(strtolower($t1[2]), strtolower($t2[2]));
+		}
+
+		/**
+		 *
+		 * Utility function to check if the $page param
+		 * is not already in the DB for this field
+		 * @param $url
+		 */
+		private function checkUniqueness($page, $entry_id = null) {
+			$id = $this->get('field_id');
+			if (is_array($page)) {
+				$page = implode(',', $page);
+			}
+
+			$query = "
+				SELECT count(`id`) as `c` FROM `tbl_entries_data_$id`
+				WHERE `page_id` IN ($page)
+			";
+
+			if ($entry_id != null) {
+				$query .= " AND `entry_id` != $entry_id";
+			}
+
+			$count = Symphony::Database()->fetchVar('c', 0, $query);
+
+			return $count == null || $count == 0;
 		}
 
 		/**
@@ -239,7 +270,32 @@
 
 			$this->appendRequiredCheckbox($div);
 			$this->appendShowColumnCheckbox($div);
+			$this->appendValueMustBeUniqueCheckbox($div);
 			$wrapper->appendChild($div);
+		}
+
+		private function appendValueMustBeUniqueCheckbox(&$wrapper) {
+			$label = new XMLElement('label');
+			$label->setAttribute('class', 'column');
+			$chk = new XMLElement('input', NULL, array('name' => 'fields['.$this->get('sortorder').'][unique_value]', 'type' => 'checkbox'));
+
+			$label->appendChild($chk);
+			$label->setValue(__('Make this field checks pages are used only once'), false);
+
+			if ($this->valueMustBeUnique()) {
+				$chk->setAttribute('checked','checked');
+			}
+
+			$wrapper->appendChild($label);
+		}
+
+		public function checkPostFieldData($data, &$message, $entry_id=NULL){
+			// uniqueness
+			if (!empty($data['page_id']) && $this->valueMustBeUnique() && !$this->checkUniqueness($data['page_id'], $entry_id)) {
+				$message = __("%s: This field must be unique. An entry already contains this page.", array($this->get('label')));
+				return self::__INVALID_FIELDS__;
+			}
+			return parent::checkPostFieldData($data, $message, $entry_id);
 		}
 
 		public function commit(){
@@ -255,6 +311,7 @@
 			$fields['field_id'] = $id;
 			$fields['allow_multiple_selection'] = ($this->get('allow_multiple_selection') ? $this->get('allow_multiple_selection') : 'no');
 			$fields['page_types'] = $page_types;
+			$fields['unique_value'] = ($this->get('unique_value') ? $this->get('unique_value') : 'no');
 
 			return FieldManager::saveSettings($id, $fields);
 		}
@@ -271,8 +328,10 @@
 			if(!is_array($data['title'])) $data['title'] = array($data['title']);
 
 			$options = array();
+			$isRequired = $this->get('required') == 'yes';
+			$isUniqueValue = $this->get('unique_value') == 'yes';
 
-			if($this->get('required') != 'yes' && $this->get('allow_multiple_selection') != 'yes') $options[] = array(NULL, false, NULL);
+			if($isRequired && $this->get('allow_multiple_selection') != 'yes') $options[] = array(NULL, false, NULL);
 
 			foreach($states as $id => $title){
 				$options[] = array($id, in_array($id, $data['page_id']), General::sanitize($title));
@@ -281,7 +340,21 @@
 			$fieldname = 'fields'.$fieldnamePrefix.'['.$this->get('element_name').']'.$fieldnamePostfix;
 			if($this->get('allow_multiple_selection') == 'yes') $fieldname .= '[]';
 
+			$value = General::sanitize($data['url']);
 			$label = Widget::Label($this->get('label'));
+
+			// not required and unique label
+			if(!$isRequired && $isUniqueValue) {
+				$label->appendChild(new XMLElement('i', __('Optional') . ', ' . __('Unique')));
+
+			// not required label
+			} else if(!$isRequired) {
+				$label->appendChild(new XMLElement('i', __('Optional')));
+
+			// unique label
+			} else if($isUniqueValue) {
+				$label->appendChild(new XMLElement('i', __('Unique')));
+			}
 			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : NULL)));
 
 			if($flagWithError != NULL) $wrapper->appendChild(Widget::Error($label, $flagWithError));
