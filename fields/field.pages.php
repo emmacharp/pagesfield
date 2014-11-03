@@ -240,6 +240,7 @@
 
 		public function findDefaults(array &$settings){
 			if(!isset($settings['allow_multiple_selection'])) $settings['allow_multiple_selection'] = 'no';
+			if(!isset($settings['unique_value'])) $settings['unique_value'] = 'no';
 		}
 
 		public function displaySettingsPanel(XMLElement &$wrapper, $errors = null){
@@ -277,7 +278,11 @@
 		private function appendValueMustBeUniqueCheckbox(&$wrapper) {
 			$label = new XMLElement('label');
 			$label->setAttribute('class', 'column');
-			$chk = new XMLElement('input', NULL, array('name' => 'fields['.$this->get('sortorder').'][unique_value]', 'type' => 'checkbox'));
+			$chk = new XMLElement('input', NULL, array(
+				'name' => 'fields['.$this->get('sortorder').'][unique_value]',
+				'type' => 'checkbox',
+				'value' => 'yes'
+			));
 
 			$label->appendChild($chk);
 			$label->setValue(__('Make this field checks pages are used only once'), false);
@@ -291,7 +296,7 @@
 
 		public function checkPostFieldData($data, &$message, $entry_id=NULL){
 			// uniqueness
-			if (!empty($data['page_id']) && $this->valueMustBeUnique() && !$this->checkUniqueness($data['page_id'], $entry_id)) {
+			if (!empty($data) && $this->valueMustBeUnique() && !$this->checkUniqueness($data, $entry_id)) {
 				$message = __("%s: This field must be unique. An entry already contains this page.", array($this->get('label')));
 				return self::__INVALID_FIELDS__;
 			}
@@ -303,15 +308,17 @@
 
 			$id = $this->get('id');
 			$page_types = $this->get('page_types'); // TODO safe
+			$allow_multiple_selection = $this->get('allow_multiple_selection');
+			$unique_value = $this->get('unique_value');
 
 			if($id === false) return false;
 
 			$fields = array();
 
 			$fields['field_id'] = $id;
-			$fields['allow_multiple_selection'] = ($this->get('allow_multiple_selection') ? $this->get('allow_multiple_selection') : 'no');
+			$fields['allow_multiple_selection'] = empty($allow_multiple_selection) ? 'no' : $this->get('allow_multiple_selection');
 			$fields['page_types'] = $page_types;
-			$fields['unique_value'] = ($this->get('unique_value') ? $this->get('unique_value') : 'no');
+			$fields['unique_value'] = empty($unique_value) ? 'no' : $this->get('unique_value');
 
 			return FieldManager::saveSettings($id, $fields);
 		}
