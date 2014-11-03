@@ -220,6 +220,7 @@
 			$wrapper->appendChild($label);
 			$tags = new XMLElement('ul');
 			$tags->setAttribute('class', 'tags');
+			$tags->setAttribute('data-interactive', 'data-interactive');
 			$types = PageManager::fetchPageTypes();
 			if(is_array($types) && !empty($types)) {
 				foreach($types as $type) $tags->appendChild(new XMLElement('li', $type));
