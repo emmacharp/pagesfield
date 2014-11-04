@@ -1,9 +1,6 @@
 # Page Select Box Field
 
-- Version: 1.7.0
-- Author: Symphony Team (team@getsymphony.com)
-- Build Date: 3rd November, 2014
-- Requirements: Symphony 2.5
+> A field that features a select box filled with Symphony's pages
 
 ## Installation
 
@@ -12,6 +9,8 @@
 2. Enable it by selecting the "Field: Page Select Box", choose Enable from the with-selected menu, then click Apply.
 
 3. You can now add the "Page Select Box" field to your sections.
+
+For more information, see <http://getsymphony.com/learn/tasks/view/install-an-extension/>
 
 ## Sorting
 
