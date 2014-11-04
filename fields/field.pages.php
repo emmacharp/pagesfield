@@ -140,6 +140,18 @@
 			return $count == null || $count == 0;
 		}
 
+		private static $fieldValuesCache = array();
+		private static function fetchAllSelectedValues($field_id) {
+			$field_id = General::intval($field_id);
+			if (isset(self::$fieldValuesCache[$field_id])) {
+				return self::$fieldValuesCache[$field_id];
+			}
+			$query = "
+				SELECT `page_id` FROM `tbl_entries_data_$field_id`
+			";
+			return (self::$fieldValuesCache[$field_id] = Symphony::Database()->fetchCol('page_id', $query));
+		}
+
 		/**
 		 * Returns Pages that match the given `$types`. If no `$types` is provided
 		 * the function returns the result of `PageManager::fetch`.
@@ -336,15 +348,24 @@
 			if(!is_array($data['title'])) $data['title'] = array($data['title']);
 
 			$options = array();
+			$values = array();
 			$isRequired = $this->get('required') == 'yes';
 			$isUniqueValue = $this->get('unique_value') == 'yes';
 
 			if(!$isRequired && $this->get('allow_multiple_selection') != 'yes') {
 				$options[] = array(NULL, false, NULL);
 			}
+			if ($isUniqueValue) {
+				$values = self::fetchAllSelectedValues($this->get('id'));
+			}
 
-			foreach($states as $id => $title){
-				$options[] = array($id, in_array($id, $data['page_id']), General::sanitize($title));
+			foreach($states as $id => $title){+
+				$selected = in_array($id, $data['page_id']);
+				$attrs = null;
+				if (!$selected && in_array($id, $values)) {
+					$attrs = array('disabled' => 'disabled');
+				}
+				$options[] = array($id, $selected, General::sanitize($title), null, null, $attrs);
 			}
 
 			$fieldname = 'fields'.$fieldnamePrefix.'['.$this->get('element_name').']'.$fieldnamePostfix;
