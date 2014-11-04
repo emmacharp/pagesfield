@@ -339,7 +339,9 @@
 			$isRequired = $this->get('required') == 'yes';
 			$isUniqueValue = $this->get('unique_value') == 'yes';
 
-			if($isRequired && $this->get('allow_multiple_selection') != 'yes') $options[] = array(NULL, false, NULL);
+			if(!$isRequired && $this->get('allow_multiple_selection') != 'yes') {
+				$options[] = array(NULL, false, NULL);
+			}
 
 			foreach($states as $id => $title){
 				$options[] = array($id, in_array($id, $data['page_id']), General::sanitize($title));
