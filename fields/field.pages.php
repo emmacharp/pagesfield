@@ -25,29 +25,19 @@
 			return ($this->get('allow_multiple_selection') == 'yes' ? false : true);
 		}
 
-		public function getToggleStates($include_parent_titles=true){
-			$negate = self::isFilterNegation($this->get('page_types'));
-			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
-			$andOperation = self::isAndOperation($types);
-
-			$types = explode(($andOperation ? '+' : ','), $types);
-			$types = array_map('trim', $types);
-			$types = array_filter($types);
-
-			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
-			// Make sure that $pages is an array of pages.
-			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
-				$pages = array($pages);
+		public function getToggleStates(){
+			$states = $this->getPossibleValues();
+			if ($this->get('unique_value') == 'yes') {
+				$values = self::fetchAllSelectedValues($this->get('id'));
+				$filteredStates = array();
+				foreach ($states as $id => $value) {
+					if (!in_array($id, $values)) {
+						$filteredStates[$id] = $value;
+					}
+				}
+				$states = $filteredStates;
 			}
-
-			$result = array();
-			foreach($pages as $p){
-				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
-				$result[$p['id']] = $title;
-			}
-
-			return $result;
+			return empty($states) ? null : $filteredStates;
 		}
 
 		public function toggleFieldData(array $data, $newState, $entry_id = null){
@@ -150,6 +140,31 @@
 				SELECT `page_id` FROM `tbl_entries_data_$field_id`
 			";
 			return (self::$fieldValuesCache[$field_id] = Symphony::Database()->fetchCol('page_id', $query));
+		}
+
+		private function getPossibleValues($include_parent_titles=true) {
+			$negate = self::isFilterNegation($this->get('page_types'));
+			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
+			$andOperation = self::isAndOperation($types);
+
+			$types = explode(($andOperation ? '+' : ','), $types);
+			$types = array_map('trim', $types);
+			$types = array_filter($types);
+
+			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
+			// Make sure that $pages is an array of pages.
+			// PageManager::fetchPageByID() returns an array of page properties for a single page.
+			if (!is_array(current($pages))) {
+				$pages = array($pages);
+			}
+
+			$result = array();
+			foreach($pages as $p){
+				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
+				$result[$p['id']] = $title;
+			}
+
+			return $result;
 		}
 
 		/**
@@ -341,7 +356,7 @@
 	-------------------------------------------------------------------------*/
 
 		public function displayPublishPanel(XMLElement &$wrapper, $data = null, $flagWithError = null, $fieldnamePrefix = null, $fieldnamePostfix = null, $entry_id = null){
-			$states = $this->getToggleStates();
+			$states = $this->getPossibleValues();
 
 			if(!is_array($data['handle'])) $data['handle'] = array($data['handle']);
 			if(!is_array($data['page_id'])) $data['page_id'] = array($data['page_id']);
@@ -474,7 +489,7 @@
 			$data = preg_split('/,\s*/i', $data);
 			$data = array_map('trim', $data);
 
-			$existing_options = $this->getToggleStates(false);
+			$existing_options = $this->getPossibleValues(false);
 
 			if(is_array($existing_options) && !empty($existing_options)){
 				$optionlist = new XMLElement('ul');
@@ -550,7 +565,7 @@
 	-------------------------------------------------------------------------*/
 
 		public function getExampleFormMarkup(){
-			$states = $this->getToggleStates();
+			$states = $this->getPossibleValues();
 
 			$options = array();
 
