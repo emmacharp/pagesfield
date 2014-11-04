@@ -120,7 +120,7 @@
 		 * @param $url
 		 */
 		private function checkUniqueness($page, $entry_id = null) {
-			$id = $this->get('field_id');
+			$id = General::intval($this->get('field_id'));
 			if (is_array($page)) {
 				$page = implode(',', $page);
 			}
@@ -131,6 +131,7 @@
 			";
 
 			if ($entry_id != null) {
+				$entry_id = General::intval($entry_id);
 				$query .= " AND `entry_id` != $entry_id";
 			}
 
