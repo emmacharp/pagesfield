@@ -13,7 +13,11 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="1.6.2" date="2014-08-08" min="2.3">
+		<release version="1.7.0" date="2014-11-04" min="2.5.0" max="2.5.x">
+			- Fix compatibility problems with Symphony 2.5 (#17)
+			- Implemented uniqueness (#7)
+		</release>
+		<release version="1.6.2" date="2014-08-08" min="2.3" max="2.4.0">
 			- Fix for page sorting (#15)
 		</release>
 		<release version="1.6.1" date="2013-08-05" min="2.3">

@@ -13,6 +13,7 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 			  `id` int(11) unsigned NOT NULL auto_increment,
 			  `field_id` int(11) unsigned NOT NULL,
 			  `allow_multiple_selection` enum('yes','no') NOT NULL default 'no',
+			  `unique_value` enum('yes','no') NOT NULL default 'no',
 			  `page_types` varchar(255) default NULL,
 			  PRIMARY KEY  (`id`),
 			  UNIQUE KEY `field_id` (`field_id`)
@@ -23,6 +24,12 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 			if(version_compare($previousVersion, '1.3', '<')){
 				$updated = Symphony::Database()->query(
 					"ALTER TABLE `tbl_fields_pages` ADD `page_types` varchar(255) default NULL"
+				);
+				if(!$updated) return false;
+			}
+			if(version_compare($previousVersion, '1.7', '<')){
+				$updated = Symphony::Database()->query(
+					"ALTER TABLE `tbl_fields_pages` ADD `unique_value` enum('yes','no') NOT NULL default 'no'"
 				);
 				if(!$updated) return false;
 			}
