@@ -483,19 +483,20 @@
 		Filtering:
 	-------------------------------------------------------------------------*/
 
-		public function displayDatasourceFilterPanel(XMLElement &$wrapper, $data = null, $errors = null, $fieldnamePrefix=NULL, $fieldnamePostfix=NULL){
-			parent::displayDatasourceFilterPanel($wrapper, $data, $errors, $fieldnamePrefix, $fieldnamePostfix);
-
-			$data = preg_split('/,\s*/i', $data);
-			$data = array_map('trim', $data);
-
+		public function displayFilteringOptions(XMLElement &$wrapper)
+		{
 			$existing_options = $this->getPossibleValues(false);
 
-			if(is_array($existing_options) && !empty($existing_options)){
+			if (is_array($existing_options) && !empty($existing_options)) {
 				$optionlist = new XMLElement('ul');
 				$optionlist->setAttribute('class', 'tags');
+				$optionlist->setAttribute('data-interactive', 'data-interactive');
 
-				foreach($existing_options as $option) $optionlist->appendChild(new XMLElement('li', $option));
+				foreach ($existing_options as $option) {
+					$optionlist->appendChild(
+						new XMLElement('li', General::sanitize($option))
+					);
+				}
 
 				$wrapper->appendChild($optionlist);
 			}
