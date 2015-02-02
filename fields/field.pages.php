@@ -173,14 +173,14 @@
 		 * the function returns the result of `PageManager::fetch`.
 		 *
 		 * @param array $types
-		 *  An array of some of the available Page Types.
+		 *	An array of some of the available Page Types.
 		 * @param boolean $negate (optional)
-		 *  If true, the logic gets inversed to return Pages that don't match the given `$types`.
+		 *	If true, the logic gets inversed to return Pages that don't match the given `$types`.
 		 * @return array|null
-		 *  An associative array of Page information with the key being the column
-		 *  name from `tbl_pages` and the value being the data. If multiple Pages
-		 *  are found, an array of Pages will be returned. If no Pages are found
-		 *  null is returned.
+		 *	An associative array of Page information with the key being the column
+		 *	name from `tbl_pages` and the value being the data. If multiple Pages
+		 *	are found, an array of Pages will be returned. If no Pages are found
+		 *	null is returned.
 		 */
 		public static function fetchPageByTypes(array $types = array(), $andOperation = false, $negate = false) {
 			// Don't filter when not types are set
@@ -251,9 +251,9 @@
 		 * for the prefix of `not:` in the given `$string`.
 		 *
 		 * @param string $string
-		 *  The string to test.
+		 *	The string to test.
 		 * @return boolean
-		 *  True if the string is prefixed with `not:`, false otherwise.
+		 *	True if the string is prefixed with `not:`, false otherwise.
 		 */
 		public static function isFilterNegation($string){
 			return (preg_match('/^not:/i', $string)) ? true : false;
@@ -462,14 +462,13 @@
 			$pages = PageManager::fetchPageByID($data['page_id'], array('id'));
 			// Make sure that $pages is an array of pages.
 			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
+			if (isset($pages['id'])) {
 				$pages = array($pages);
 			}
 
 			$result = array();
-			foreach($pages as $p){
-				$title = PageManager::resolvePageTitle($p['id']);
-				$result[$p['id']] = $title;
+			foreach($pages as $page) {
+				$result[] = PageManager::resolvePageTitle($page['id']);
 			}
 
 			$value = implode(', ', $result);
