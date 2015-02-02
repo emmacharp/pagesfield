@@ -13,8 +13,10 @@
 		</author>
 	</authors>
 	<releases>
-		<release version="1.7.0" date="2014-11-04" min="2.5.0" max="2.5.x">
+		<release version="1.7.0" date="2015-02-02" min="2.5.0" max="2.5.x">
+			- Fix sorting with multiple pages causing entries to disappear (#21)
 			- Fix compatibility problems with Symphony 2.5 (#17)
+			- Fix multiple pages not appearing (#16)
 			- Implemented uniqueness (#7)
 		</release>
 		<release version="1.6.2" date="2014-08-08" min="2.3" max="2.4.0">
