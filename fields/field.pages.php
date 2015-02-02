@@ -14,6 +14,7 @@
 			// Set default
 			$this->set('required', 'yes');
 			$this->set('show_column', 'no');
+			$this->set('unique_value', 'no');
 		}
 
 	/*-------------------------------------------------------------------------
@@ -24,29 +25,19 @@
 			return ($this->get('allow_multiple_selection') == 'yes' ? false : true);
 		}
 
-		public function getToggleStates($include_parent_titles=true){
-			$negate = self::isFilterNegation($this->get('page_types'));
-			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
-			$andOperation = self::isAndOperation($types);
-
-			$types = explode(($andOperation ? '+' : ','), $types);
-			$types = array_map('trim', $types);
-			$types = array_filter($types);
-
-			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
-			// Make sure that $pages is an array of pages.
-			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
-				$pages = array($pages);
+		public function getToggleStates(){
+			$states = $this->getPossibleValues();
+			if ($this->get('unique_value') == 'yes') {
+				$values = self::fetchAllSelectedValues($this->get('id'));
+				$filteredStates = array();
+				foreach ($states as $id => $value) {
+					if (!in_array($id, $values)) {
+						$filteredStates[$id] = $value;
+					}
+				}
+				$states = $filteredStates;
 			}
-
-			$result = array();
-			foreach($pages as $p){
-				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
-				$result[$p['id']] = $title;
-			}
-
-			return $result;
+			return empty($states) ? null : $filteredStates;
 		}
 
 		public function toggleFieldData(array $data, $newState, $entry_id = null){
@@ -80,6 +71,10 @@
 			return true;
 		}
 
+		public function valueMustBeUnique(){
+			return $this->get('unique_value') == 'yes';
+		}
+
 	/*-------------------------------------------------------------------------
 		Setup:
 	-------------------------------------------------------------------------*/
@@ -94,8 +89,9 @@
 				  `handle` varchar(255) default NULL,
 				  PRIMARY KEY  (`id`),
 				  KEY `entry_id` (`entry_id`),
-				  KEY `handle` (`handle`),
-				  KEY `page_id` (`page_id`)
+				  KEY `page_id` (`page_id`),
+				  KEY `title` (`title`),
+				  KEY `handle` (`handle`)
 				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;"
 			);
 		}
@@ -109,18 +105,82 @@
 		}
 
 		/**
+		 *
+		 * Utility function to check if the $page param
+		 * is not already in the DB for this field
+		 * @param $url
+		 */
+		private function checkUniqueness($page, $entry_id = null) {
+			$id = General::intval($this->get('field_id'));
+			if (is_array($page)) {
+				$page = implode(',', $page);
+			}
+
+			$query = "
+				SELECT count(`id`) as `c` FROM `tbl_entries_data_$id`
+				WHERE `page_id` IN ($page)
+			";
+
+			if ($entry_id != null) {
+				$entry_id = General::intval($entry_id);
+				$query .= " AND `entry_id` != $entry_id";
+			}
+
+			$count = Symphony::Database()->fetchVar('c', 0, $query);
+
+			return $count == null || $count == 0;
+		}
+
+		private static $fieldValuesCache = array();
+		private static function fetchAllSelectedValues($field_id) {
+			$field_id = General::intval($field_id);
+			if (isset(self::$fieldValuesCache[$field_id])) {
+				return self::$fieldValuesCache[$field_id];
+			}
+			$query = "
+				SELECT `page_id` FROM `tbl_entries_data_$field_id`
+			";
+			return (self::$fieldValuesCache[$field_id] = Symphony::Database()->fetchCol('page_id', $query));
+		}
+
+		private function getPossibleValues($include_parent_titles=true) {
+			$negate = self::isFilterNegation($this->get('page_types'));
+			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
+			$andOperation = self::isAndOperation($types);
+
+			$types = explode(($andOperation ? '+' : ','), $types);
+			$types = array_map('trim', $types);
+			$types = array_filter($types);
+
+			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
+			// Make sure that $pages is an array of pages.
+			// PageManager::fetchPageByID() returns an array of page properties for a single page.
+			if (!is_array(current($pages))) {
+				$pages = array($pages);
+			}
+
+			$result = array();
+			foreach($pages as $p){
+				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
+				$result[$p['id']] = $title;
+			}
+
+			return $result;
+		}
+
+		/**
 		 * Returns Pages that match the given `$types`. If no `$types` is provided
 		 * the function returns the result of `PageManager::fetch`.
 		 *
 		 * @param array $types
-		 *  An array of some of the available Page Types.
+		 *	An array of some of the available Page Types.
 		 * @param boolean $negate (optional)
-		 *  If true, the logic gets inversed to return Pages that don't match the given `$types`.
+		 *	If true, the logic gets inversed to return Pages that don't match the given `$types`.
 		 * @return array|null
-		 *  An associative array of Page information with the key being the column
-		 *  name from `tbl_pages` and the value being the data. If multiple Pages
-		 *  are found, an array of Pages will be returned. If no Pages are found
-		 *  null is returned.
+		 *	An associative array of Page information with the key being the column
+		 *	name from `tbl_pages` and the value being the data. If multiple Pages
+		 *	are found, an array of Pages will be returned. If no Pages are found
+		 *	null is returned.
 		 */
 		public static function fetchPageByTypes(array $types = array(), $andOperation = false, $negate = false) {
 			// Don't filter when not types are set
@@ -191,9 +251,9 @@
 		 * for the prefix of `not:` in the given `$string`.
 		 *
 		 * @param string $string
-		 *  The string to test.
+		 *	The string to test.
 		 * @return boolean
-		 *  True if the string is prefixed with `not:`, false otherwise.
+		 *	True if the string is prefixed with `not:`, false otherwise.
 		 */
 		public static function isFilterNegation($string){
 			return (preg_match('/^not:/i', $string)) ? true : false;
@@ -209,6 +269,7 @@
 
 		public function findDefaults(array &$settings){
 			if(!isset($settings['allow_multiple_selection'])) $settings['allow_multiple_selection'] = 'no';
+			if(!isset($settings['unique_value'])) $settings['unique_value'] = 'no';
 		}
 
 		public function displaySettingsPanel(XMLElement &$wrapper, $errors = null){
@@ -220,6 +281,7 @@
 			$wrapper->appendChild($label);
 			$tags = new XMLElement('ul');
 			$tags->setAttribute('class', 'tags');
+			$tags->setAttribute('data-interactive', 'data-interactive');
 			$types = PageManager::fetchPageTypes();
 			if(is_array($types) && !empty($types)) {
 				foreach($types as $type) $tags->appendChild(new XMLElement('li', $type));
@@ -238,7 +300,36 @@
 
 			$this->appendRequiredCheckbox($div);
 			$this->appendShowColumnCheckbox($div);
+			$this->appendValueMustBeUniqueCheckbox($div);
 			$wrapper->appendChild($div);
+		}
+
+		private function appendValueMustBeUniqueCheckbox(&$wrapper) {
+			$label = new XMLElement('label');
+			$label->setAttribute('class', 'column');
+			$chk = new XMLElement('input', NULL, array(
+				'name' => 'fields['.$this->get('sortorder').'][unique_value]',
+				'type' => 'checkbox',
+				'value' => 'yes'
+			));
+
+			$label->appendChild($chk);
+			$label->setValue(__('Make this field checks pages are used only once'), false);
+
+			if ($this->valueMustBeUnique()) {
+				$chk->setAttribute('checked','checked');
+			}
+
+			$wrapper->appendChild($label);
+		}
+
+		public function checkPostFieldData($data, &$message, $entry_id=NULL){
+			// uniqueness
+			if (!empty($data) && $this->valueMustBeUnique() && !$this->checkUniqueness($data, $entry_id)) {
+				$message = __("%s: This field must be unique. An entry already contains this page.", array($this->get('label')));
+				return self::__INVALID_FIELDS__;
+			}
+			return parent::checkPostFieldData($data, $message, $entry_id);
 		}
 
 		public function commit(){
@@ -246,14 +337,17 @@
 
 			$id = $this->get('id');
 			$page_types = $this->get('page_types'); // TODO safe
+			$allow_multiple_selection = $this->get('allow_multiple_selection');
+			$unique_value = $this->get('unique_value');
 
 			if($id === false) return false;
 
 			$fields = array();
 
 			$fields['field_id'] = $id;
-			$fields['allow_multiple_selection'] = ($this->get('allow_multiple_selection') ? $this->get('allow_multiple_selection') : 'no');
+			$fields['allow_multiple_selection'] = empty($allow_multiple_selection) ? 'no' : $this->get('allow_multiple_selection');
 			$fields['page_types'] = $page_types;
+			$fields['unique_value'] = empty($unique_value) ? 'no' : $this->get('unique_value');
 
 			return FieldManager::saveSettings($id, $fields);
 		}
@@ -263,24 +357,51 @@
 	-------------------------------------------------------------------------*/
 
 		public function displayPublishPanel(XMLElement &$wrapper, $data = null, $flagWithError = null, $fieldnamePrefix = null, $fieldnamePostfix = null, $entry_id = null){
-			$states = $this->getToggleStates();
+			$states = $this->getPossibleValues();
 
 			if(!is_array($data['handle'])) $data['handle'] = array($data['handle']);
 			if(!is_array($data['page_id'])) $data['page_id'] = array($data['page_id']);
 			if(!is_array($data['title'])) $data['title'] = array($data['title']);
 
 			$options = array();
+			$values = array();
+			$isRequired = $this->get('required') == 'yes';
+			$isUniqueValue = $this->get('unique_value') == 'yes';
 
-			if($this->get('required') != 'yes' && $this->get('allow_multiple_selection') != 'yes') $options[] = array(NULL, false, NULL);
+			if(!$isRequired && $this->get('allow_multiple_selection') != 'yes') {
+				$options[] = array(NULL, false, NULL);
+			}
+			if ($isUniqueValue) {
+				$values = self::fetchAllSelectedValues($this->get('id'));
+			}
 
-			foreach($states as $id => $title){
-				$options[] = array($id, in_array($id, $data['page_id']), General::sanitize($title));
+			foreach($states as $id => $title){+
+				$selected = in_array($id, $data['page_id']);
+				$attrs = null;
+				if (!$selected && in_array($id, $values)) {
+					$attrs = array('disabled' => 'disabled');
+				}
+				$options[] = array($id, $selected, General::sanitize($title), null, null, $attrs);
 			}
 
 			$fieldname = 'fields'.$fieldnamePrefix.'['.$this->get('element_name').']'.$fieldnamePostfix;
 			if($this->get('allow_multiple_selection') == 'yes') $fieldname .= '[]';
 
+			$value = General::sanitize($data['url']);
 			$label = Widget::Label($this->get('label'));
+
+			// not required and unique label
+			if(!$isRequired && $isUniqueValue) {
+				$label->appendChild(new XMLElement('i', __('Optional') . ', ' . __('Unique')));
+
+			// not required label
+			} else if(!$isRequired) {
+				$label->appendChild(new XMLElement('i', __('Optional')));
+
+			// unique label
+			} else if($isUniqueValue) {
+				$label->appendChild(new XMLElement('i', __('Unique')));
+			}
 			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : NULL)));
 
 			if($flagWithError != NULL) $wrapper->appendChild(Widget::Error($label, $flagWithError));
@@ -334,26 +455,25 @@
 			$wrapper->appendChild($list);
 		}
 
-		public function prepareTableValue($data, XMLElement $link=NULL, $entry_id = null){
+		public function prepareTextValue($data, $entry_id = null){
 			// stop when no page is set
 			if(!isset($data['page_id'])) return;
 
 			$pages = PageManager::fetchPageByID($data['page_id'], array('id'));
 			// Make sure that $pages is an array of pages.
 			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
+			if (isset($pages['id'])) {
 				$pages = array($pages);
 			}
 
 			$result = array();
-			foreach($pages as $p){
-				$title = PageManager::resolvePageTitle($p['id']);
-				$result[$p['id']] = $title;
+			foreach($pages as $page) {
+				$result[] = PageManager::resolvePageTitle($page['id']);
 			}
 
 			$value = implode(', ', $result);
 
-			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link, $entry_id);
+			return $value;
 		}
 
 		public function getParameterPoolValue($data, $entry_id = null) {
@@ -369,7 +489,7 @@
 			$data = preg_split('/,\s*/i', $data);
 			$data = array_map('trim', $data);
 
-			$existing_options = $this->getToggleStates(false);
+			$existing_options = $this->getPossibleValues(false);
 
 			if(is_array($existing_options) && !empty($existing_options)){
 				$optionlist = new XMLElement('ul');
@@ -406,9 +526,9 @@
 	-------------------------------------------------------------------------*/
 
 		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
-			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-			$joins .= "INNER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `ed`.`page_id`) ";
-			$sort  .= "ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
+			$joins .= "LEFT OUTER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
+			$joins .= "LEFT OUTER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `ed`.`page_id`) ";
+			$sort  .= "GROUP BY `e`.`id` ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
 		}
 
 	/*-------------------------------------------------------------------------
@@ -445,7 +565,7 @@
 	-------------------------------------------------------------------------*/
 
 		public function getExampleFormMarkup(){
-			$states = $this->getToggleStates();
+			$states = $this->getPossibleValues();
 
 			$options = array();
 
