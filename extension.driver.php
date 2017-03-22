@@ -20,7 +20,7 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
 		}
 
-		public function update($previousVersion) {
+		public function update($previousVersion = false) {
 			if(version_compare($previousVersion, '1.3', '<')){
 				$updated = Symphony::Database()->query(
 					"ALTER TABLE `tbl_fields_pages` ADD `page_types` varchar(255) default NULL"

@@ -476,7 +476,7 @@
 			return $value;
 		}
 
-		public function getParameterPoolValue($data, $entry_id = null) {
+		public function getParameterPoolValue(array $data, $entry_id = null) {
 			return $data['page_id'];
 		}
 	/*-------------------------------------------------------------------------

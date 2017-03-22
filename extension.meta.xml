@@ -13,6 +13,11 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="1.8.2" date="2016-08-16" min="2.6.0" max="2.x.x">
+			- Supported on PHP 7
+			- Fix update database
+			- Fix param to fit parent signature
+		</release>
 		<release version="1.8.1" date="2016-03-06" min="2.6.0" max="2.x.x">
 			- Updated compatibility infos
 		</release>
