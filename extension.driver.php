@@ -159,7 +159,7 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 				}
 
 				$drawer = Widget::Drawer('entry-associations', __('Show Associations'), $content);
-				$page->insertDrawer($drawer, $drawer_position, 'prepend');
+				$page->insertDrawer($drawer, $drawer_position, 'append', Widget::SVGIcon('associations'));
 			}
 
 		}
