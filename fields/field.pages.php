@@ -532,6 +532,11 @@
 			$sort  .= "GROUP BY `e`.`id` ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
 		}
 
+        public function buildSortingSelectSQL($sort, $order = 'ASC')
+        {
+            return null;
+        }
+
 	/*-------------------------------------------------------------------------
 		Grouping:
 	-------------------------------------------------------------------------*/
