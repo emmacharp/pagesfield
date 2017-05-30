@@ -526,7 +526,7 @@
 		Sorting:
 	-------------------------------------------------------------------------*/
 
-		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC', &$select = NULL){
+		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 			$joins .= "LEFT OUTER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
 			$joins .= "LEFT OUTER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `ed`.`page_id`) ";
 			$sort  .= "GROUP BY `e`.`id` ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
