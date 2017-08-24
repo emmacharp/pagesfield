@@ -10,11 +10,11 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 
 		public function install(){
 			return Symphony::Database()->query("CREATE TABLE `tbl_fields_pages` (
-			  `id` int(11) unsigned NOT NULL auto_increment,
-			  `field_id` int(11) unsigned NOT NULL,
-			  `allow_multiple_selection` enum('yes','no') NOT NULL default 'no',
-			  `unique_value` enum('yes','no') NOT NULL default 'no',
-			  `page_types` varchar(255) default NULL,
+			  `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+			  `field_id` INT(11) UNSIGNED NOT NULL,
+			  `allow_multiple_selection` ENUM('yes','no') NOT NULL DEFAULT 'no',
+			  `unique_value` ENUM('yes','no') NOT NULL default 'no',
+			  `page_types` VARCHAR(255) DEFAULT NULL,
 			  PRIMARY KEY  (`id`),
 			  UNIQUE KEY `field_id` (`field_id`)
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
@@ -23,13 +23,13 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 		public function update($previousVersion = false) {
 			if(version_compare($previousVersion, '1.3', '<')){
 				$updated = Symphony::Database()->query(
-					"ALTER TABLE `tbl_fields_pages` ADD `page_types` varchar(255) default NULL"
+					"ALTER TABLE `tbl_fields_pages` ADD `page_types` VARCHAR(255) DEFAULT NULL"
 				);
 				if(!$updated) return false;
 			}
 			if(version_compare($previousVersion, '1.7', '<')){
 				$updated = Symphony::Database()->query(
-					"ALTER TABLE `tbl_fields_pages` ADD `unique_value` enum('yes','no') NOT NULL default 'no'"
+					"ALTER TABLE `tbl_fields_pages` ADD `unique_value` ENUM('yes','no') NOT NULL DEFAULT 'no'"
 				);
 				if(!$updated) return false;
 			}

@@ -82,11 +82,11 @@
 		public function createTable(){
 			return Symphony::Database()->query(
 				"CREATE TABLE IF NOT EXISTS `tbl_entries_data_" . $this->get('id') . "` (
-				  `id` int(11) unsigned NOT NULL auto_increment,
-				  `entry_id` int(11) unsigned NOT NULL,
-				  `page_id` int(11) unsigned NOT NULL,
-				  `title` varchar(255) default NULL,
-				  `handle` varchar(255) default NULL,
+				  `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+				  `entry_id` INT(11) UNSIGNED NOT NULL,
+				  `page_id` INT(11) UNSIGNED NOT NULL,
+				  `title` VARCHAR(255) DEFAULT NULL,
+				  `handle` VARCHAR(255) DEFAULT NULL,
 				  PRIMARY KEY  (`id`),
 				  KEY `entry_id` (`entry_id`),
 				  KEY `page_id` (`page_id`),
@@ -143,7 +143,7 @@
 			return (self::$fieldValuesCache[$field_id] = Symphony::Database()->fetchCol('page_id', $query));
 		}
 
-		private function getPossibleValues($include_parent_titles=true) {
+		private function getPossibleValues($include_parent_titles = true) {
 			$negate = self::isFilterNegation($this->get('page_types'));
 			$types = ($negate ? preg_replace('/^not:\s*/i', null, $this->get('page_types')) : $this->get('page_types'));
 			$andOperation = self::isAndOperation($types);
@@ -295,7 +295,7 @@
 			if($this->get('allow_multiple_selection') == 'yes') $input->setAttribute('checked', 'checked');
 			$label->setValue($input->generate() . ' ' . __('Allow selection of multiple options'));
 
-			$div = new XMLElement('div', NULL, array('class' => 'two columns'));
+			$div = new XMLElement('div', null, array('class' => 'two columns'));
 			$div->appendChild($label);
 
 			$this->appendRequiredCheckbox($div);
@@ -307,7 +307,7 @@
 		private function appendValueMustBeUniqueCheckbox(&$wrapper) {
 			$label = new XMLElement('label');
 			$label->setAttribute('class', 'column');
-			$chk = new XMLElement('input', NULL, array(
+			$chk = new XMLElement('input', null, array(
 				'name' => 'fields['.$this->get('sortorder').'][unique_value]',
 				'type' => 'checkbox',
 				'value' => 'yes'
@@ -323,7 +323,7 @@
 			$wrapper->appendChild($label);
 		}
 
-		public function checkPostFieldData($data, &$message, $entry_id=NULL){
+		public function checkPostFieldData($data, &$message, $entry_id = null){
 			// uniqueness
 			if (!empty($data) && $this->valueMustBeUnique() && !$this->checkUniqueness($data, $entry_id)) {
 				$message = __("%s: This field must be unique. An entry already contains this page.", array($this->get('label')));
@@ -369,7 +369,7 @@
 			$isUniqueValue = $this->get('unique_value') == 'yes';
 
 			if(!$isRequired && $this->get('allow_multiple_selection') != 'yes') {
-				$options[] = array(NULL, false, NULL);
+				$options[] = array(null, false, null);
 			}
 			if ($isUniqueValue) {
 				$values = self::fetchAllSelectedValues($this->get('id'));
@@ -402,16 +402,16 @@
 			} else if($isUniqueValue) {
 				$label->appendChild(new XMLElement('i', __('Unique')));
 			}
-			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : NULL)));
+			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : null)));
 
-			if($flagWithError != NULL) $wrapper->appendChild(Widget::Error($label, $flagWithError));
+			if($flagWithError != null) $wrapper->appendChild(Widget::Error($label, $flagWithError));
 			else $wrapper->appendChild($label);
 		}
 
-		public function processRawFieldData($data, &$status, &$message=null, $simulate = false, $entry_id = null) {
+		public function processRawFieldData($data, &$status, &$message = null, $simulate = false, $entry_id = null) {
 			$status = self::__OK__;
 
-			if(empty($data)) return NULL;
+			if(empty($data)) return null;
 
 			if(!is_array($data)) $data = array($data);
 
@@ -526,7 +526,7 @@
 		Sorting:
 	-------------------------------------------------------------------------*/
 
-		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
+		public function buildSortingSQL(&$joins, &$where, &$sort, $order = 'ASC'){
 			$joins .= "LEFT OUTER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
 			$joins .= "LEFT OUTER JOIN `tbl_pages` ON (`tbl_pages`.`id` = `ed`.`page_id`) ";
 			$sort  .= "GROUP BY `e`.`id` ORDER BY " . (strtolower($order) == 'random' ? 'RAND()' : "`tbl_pages`.`sortorder` $order");
@@ -576,14 +576,14 @@
 			$options = array();
 
 			foreach($states as $handle => $v){
-				$options[] = array($handle, NULL, General::sanitize($v));
+				$options[] = array($handle, null, General::sanitize($v));
 			}
 
 			$fieldname = 'fields['.$this->get('element_name').']';
 			if($this->get('allow_multiple_selection') == 'yes') $fieldname .= '[]';
 
 			$label = Widget::Label($this->get('label'));
-			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : NULL)));
+			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : null)));
 
 			return $label;
 		}
