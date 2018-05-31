@@ -80,20 +80,36 @@
 	-------------------------------------------------------------------------*/
 
 		public function createTable(){
-			return Symphony::Database()->query(
-				"CREATE TABLE IF NOT EXISTS `tbl_entries_data_" . $this->get('id') . "` (
-				  `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-				  `entry_id` INT(11) UNSIGNED NOT NULL,
-				  `page_id` INT(11) UNSIGNED NOT NULL,
-				  `title` VARCHAR(255) DEFAULT NULL,
-				  `handle` VARCHAR(255) DEFAULT NULL,
-				  PRIMARY KEY  (`id`),
-				  KEY `entry_id` (`entry_id`),
-				  KEY `page_id` (`page_id`),
-				  KEY `title` (`title`),
-				  KEY `handle` (`handle`)
-				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;"
-			);
+			return Symphony::Database()
+				->create('tbl_entries_data_' . $this->get('id'))
+				->ifNotExists()
+				->charset('utf8')
+				->collate('utf8_unicode_ci')
+				->fields([
+					'id' => [
+						'type' => 'int(11)',
+						'auto' => true,
+					],
+					'entry_id' => 'int(11)',
+					'page_id' => 'int(11)',
+					'title' => [
+						'type' => 'varchar(255)',
+						'null' => true,
+					],
+					'handle' => [
+						'type' => 'varchar(255)',
+						'null' => true,
+					],
+				])
+				->keys([
+					'id' => 'primary',
+					'entry_id' => 'key',
+					'page_id' => 'key',
+					'title' => 'key',
+					'handle' => 'key',
+				])
+				->execute()
+				->success();
 		}
 
 	/*-------------------------------------------------------------------------
@@ -112,21 +128,22 @@
 		 */
 		private function checkUniqueness($page, $entry_id = null) {
 			$id = General::intval($this->get('field_id'));
-			if (is_array($page)) {
-				$page = implode(',', $page);
+			if (!is_array($page)) {
+				$page = explode(',', $page);
 			}
 
-			$query = "
-				SELECT count(`id`) as `c` FROM `tbl_entries_data_$id`
-				WHERE `page_id` IN ($page)
-			";
+			$q = Symphony::Database()
+				->select(['count(id)' => 'c'])
+				->from('tbl_entries_data_' . $id)
+				->where(['page_id' => ['in' => [$page]]]);
 
 			if ($entry_id != null) {
-				$entry_id = General::intval($entry_id);
-				$query .= " AND `entry_id` != $entry_id";
+				$q->where(['entry_id' => General::intval($entry_id)]);
 			}
 
-			$count = Symphony::Database()->fetchVar('c', 0, $query);
+			$count = $q
+				->execute()
+				->variable('c');
 
 			return $count == null || $count == 0;
 		}
@@ -137,10 +154,14 @@
 			if (isset(self::$fieldValuesCache[$field_id])) {
 				return self::$fieldValuesCache[$field_id];
 			}
-			$query = "
-				SELECT `page_id` FROM `tbl_entries_data_$field_id`
-			";
-			return (self::$fieldValuesCache[$field_id] = Symphony::Database()->fetchCol('page_id', $query));
+
+			$q = Symphony::Database()
+				->select(['page_id'])
+				->from('tbl_entries_data_' . $field_id)
+				->execute()
+				->column('page_id');
+
+			return (self::$fieldValuesCache[$field_id] = $q);
 		}
 
 		private function getPossibleValues($include_parent_titles = true) {
@@ -187,61 +208,60 @@
 			if(empty($types)) return PageManager::fetch(false);
 
 			$types = array_map(array('MySQL', 'cleanValue'), $types);
+			$q = Symphony::Database()
+				->select(['p.*'])
+				->from('tbl_pages', 'p');
 
 			// Build SQL parts depending on query parameters. There are four possibilities.
 			// 1. Without negation and with OR filter
 			if (!$andOperation && !$negate) {
-				$join = "LEFT JOIN `tbl_pages_types` AS `pt` ON (p.id = pt.page_id)";
-				$where = sprintf("
-						AND `pt`.type IN ('%s')
-					",
-					implode("', '", $types)
-				);
+				$q->leftJoin('tbl_pages_types', 'pt')
+					->on(['p.id' => '$pt.page_id'])
+					->where(['pt.type' => ['in' => $types]]);
 			}
 			// 2. Without negation and with AND filter
 			elseif ($andOperation && !$negate) {
-				$join = "";
-				$where = "";
 				foreach($types as $index => $type) {
-					$join .= " LEFT JOIN `tbl_pages_types` AS `pt_{$index}` ON (p.id = pt_{$index}.page_id)";
-					$where .= " AND pt_{$index}.type = '" . $type . "'";
+					$q->leftJoin('tbl_pages_types', 'pt_' . $index)
+						->on(['p.id' => '$pt_' . $index . '.page_id']);
+				}
+
+				foreach($types as $index => $type) {
+					$q->where(['pt_' . $index . '.type' => $type]);
 				}
 			}
 			// 3. With negation and with OR filter
 			elseif (!$andOperation && $negate) {
-				$join = sprintf("
-						LEFT JOIN `tbl_pages_types` AS `pt` ON (p.id = pt.page_id AND pt.type IN ('%s'))
-					",
-					implode("', '", $types)
-				);
-				$where = "AND `pt`.type IS NULL";
+				$q->leftJoin('tbl_pages_types', 'pt')
+					->on([
+						'p.id' => '$pt.page_id',
+						'pt.type' => ['in' => $types],
+					])
+					->where(['pt.type' => ['in' => $types]]);
 			}
 			// 4. With negation and with AND filter
 			elseif ($andOperation && $negate) {
-				$join = "";
-				$where = "AND (";
 				foreach($types as $index => $type) {
-					$join .= sprintf("
-							LEFT JOIN `tbl_pages_types` AS `pt_%s` ON (p.id = pt_%s.page_id AND pt_%s.type IN ('%s'))
-						",
-						$index, $index, $index,
-						$type
-					);
-					$where .= ($index === 0 ? "" : " OR ") . "pt_{$index}.type IS NULL";
+					$q->leftJoin('tbl_pages_types', 'pt_' . $index)
+						->on([
+							'p.id' => '$pt_' . $index . '.page_id',
+							'pt_' . $index . '.type' => ['in' => $type],
+						]);
 				}
-				$where .= ")";
+
+				$where = array();
+
+				foreach($types as $index => $type) {
+					$where['pt_' . $index . '.type'] = null;
+				}
+
+				$q->where(['or' => [$where]]);
 			}
 
-			$pages = Symphony::Database()->fetch(sprintf("
-					SELECT `p`.*
-					FROM `tbl_pages` AS `p`
-					%s
-					WHERE 1 %s
-					ORDER BY `p`.`sortorder` ASC
-				",
-				$join,
-				$where
-			));
+			$pages = $q
+				->orderBy('p.sortorder')
+				->execute()
+				->rows();
 
 			return count($pages) == 1 ? array_pop($pages) : $pages;
 		}

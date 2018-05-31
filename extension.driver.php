@@ -5,32 +5,76 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 	Class extension_pagesfield extends Extension{
 
 		public function uninstall(){
-			Symphony::Database()->query("DROP TABLE `tbl_fields_pages`");
+			return Symphony::Database()
+				->drop('tbl_fields_pages')
+				->ifExists()
+				->execute()
+				->success();
 		}
 
 		public function install(){
-			return Symphony::Database()->query("CREATE TABLE `tbl_fields_pages` (
-			  `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-			  `field_id` INT(11) UNSIGNED NOT NULL,
-			  `allow_multiple_selection` ENUM('yes','no') NOT NULL DEFAULT 'no',
-			  `unique_value` ENUM('yes','no') NOT NULL default 'no',
-			  `page_types` VARCHAR(255) DEFAULT NULL,
-			  PRIMARY KEY  (`id`),
-			  UNIQUE KEY `field_id` (`field_id`)
-			) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
+			return Symphony::Database()
+				->create('tbl_fields_pages')
+				->ifNotExists()
+				->charset('utf8')
+				->collate('utf8_unicode_ci')
+				->fields([
+					'id' => [
+						'type' => 'int(11)',
+						'auto' => true,
+					],
+					'field_id' => 'int(11)',
+					'allow_multiple_selection' => [
+						'type' => 'enum',
+						'values' => ['yes','no'],
+						'default' => 'no',
+					],
+					'unique_value' => [
+						'type' => 'enum',
+						'values' => ['yes','no'],
+						'default' => 'no',
+					],
+					'page_types' => [
+						'type' => 'varchar(255)',
+						'null' => true,
+					],
+				])
+				->keys([
+					'id' => 'primary',
+					'field_id' => 'unique',
+				])
+				->execute()
+				->success();
 		}
 
 		public function update($previousVersion = false) {
 			if(version_compare($previousVersion, '1.3', '<')){
-				$updated = Symphony::Database()->query(
-					"ALTER TABLE `tbl_fields_pages` ADD `page_types` VARCHAR(255) DEFAULT NULL"
-				);
+				$updated = Symphony::Database()
+					->alter('tbl_fields_pages')
+					->add([
+						'page_types' => [
+							'type' => 'varchar(255)',
+							'null' => true,
+						],
+					])
+					->execute()
+					->success();
+
 				if(!$updated) return false;
 			}
 			if(version_compare($previousVersion, '1.7', '<')){
-				$updated = Symphony::Database()->query(
-					"ALTER TABLE `tbl_fields_pages` ADD `unique_value` ENUM('yes','no') NOT NULL DEFAULT 'no'"
-				);
+				$updated = Symphony::Database()
+					->alter('tbl_fields_pages')
+					->add([
+						'unique_value' => [
+							'type' => 'enum',
+							'values' => ['yes','no'],
+							'default' => 'no',
+						],
+					])
+					->execute()
+					->success();
+
 				if(!$updated) return false;
 			}
 			return true;
