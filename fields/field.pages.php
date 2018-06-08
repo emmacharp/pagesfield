@@ -3,11 +3,14 @@
 	if(!defined('__IN_SYMPHONY__')) die('<h2>Symphony Error</h2><p>You cannot directly access this file</p>');
 
 	require_once(TOOLKIT . '/class.pagemanager.php');
+require_once(EXTENSIONS . '/pagesfield/lib/class.entryquerypagesadapter.php');
 
 	Class fieldPages extends Field{
 
 		public function __construct(){
 			parent::__construct();
+			$this->entryQueryFieldAdapter = new EntryQueryPagesAdapter($this);
+
 			$this->_name = 'Page Select Box';
 			$this->_required = true;
 
