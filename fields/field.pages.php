@@ -208,7 +208,7 @@
 		 */
 		public static function fetchPageByTypes(array $types = array(), $andOperation = false, $negate = false) {
 			// Don't filter when not types are set
-			if(empty($types)) return PageManager::fetch(false);
+			if(empty($types)) return (new PageManager)->select()->execute()->rows();
 
 			$types = array_map(array('MySQL', 'cleanValue'), $types);
 			$q = Symphony::Database()
