@@ -106,10 +106,19 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 			$drawer_position = 'vertical-right';
 
 			if ($page instanceOf contentBlueprintsPages && $callback['context'][0] == 'edit') {
-				$fields = FieldManager::fetch(null, null, 'asc', 'sortorder', 'pages');
+				$fields = (new FieldManager)
+					->select()
+					->sort('sortorder', 'asc')
+					->type('pages')
+					->execute()
+					->rows();
 
 				foreach ($fields as $field) {
-					$section = SectionManager::fetch($field->get('parent_section'));
+					$section = (new SectionManager)
+						->select()
+						->section($field->get('parent_section'))
+						->execute()
+						->next();
 
 					$visible_field = current($section->fetchVisibleColumns());
 					$schema = $visible_field ? array($visible_field->get('element_name')) : array();
