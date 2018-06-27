@@ -177,13 +177,8 @@
 			$types = array_filter($types);
 
 			$pages = self::fetchPageByTypes($types, $andOperation, $negate);
-			// Make sure that $pages is an array of pages.
-			// PageManager::fetchPageByID() returns an array of page properties for a single page.
-			if (!is_array(current($pages))) {
-				$pages = array($pages);
-			}
-
 			$result = array();
+
 			foreach($pages as $p){
 				$title = ($include_parent_titles ? PageManager::resolvePageTitle($p['id']) : $p['title']);
 				$result[$p['id']] = $title;
