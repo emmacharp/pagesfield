@@ -16,8 +16,6 @@ require_once TOOLKIT.'/class.fieldmanager.php';
 			return Symphony::Database()
 				->create('tbl_fields_pages')
 				->ifNotExists()
-				->charset('utf8')
-				->collate('utf8_unicode_ci')
 				->fields([
 					'id' => [
 						'type' => 'int(11)',
