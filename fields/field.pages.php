@@ -407,7 +407,9 @@
 			if($this->get('allow_multiple_selection') == 'yes') $fieldname .= '[]';
 
 			$value = General::sanitize($data['url']);
-			$label = Widget::Label($this->get('label'));
+			$label = Widget::Label();
+			$span = new XMLElement('span', $this->get('label'));
+			$label->appendChild($span);
 
 			// not required and unique label
 			if(!$isRequired && $isUniqueValue) {
@@ -421,10 +423,13 @@
 			} else if($isUniqueValue) {
 				$label->appendChild(new XMLElement('i', __('Unique')));
 			}
-			$label->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple') : null)));
 
-			if($flagWithError != null) $wrapper->appendChild(Widget::Error($label, $flagWithError));
-			else $wrapper->appendChild($label);
+			if($flagWithError != null) {
+				$label = Widget::Error($label, $flagWithError);
+			}
+
+			$wrapper->appendChild($label);
+			$wrapper->appendChild(Widget::Select($fieldname, $options, ($this->get('allow_multiple_selection') == 'yes' ? array('multiple' => 'multiple', 'size' => count($options)) : null)));
 		}
 
 		public function processRawFieldData($data, &$status, &$message = null, $simulate = false, $entry_id = null) {
